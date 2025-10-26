@@ -4,7 +4,6 @@ from typing import Annotated, Any, Generic, Literal, TypeAlias, TypeVar, Self
 from pydantic import BaseModel, ConfigDict, Field, FileUrl, RootModel
 from pydantic.networks import AnyUrl, UrlConstraints
 from typing_extensions import deprecated
-from pickle import NONE
 
 """
 Model Context Protocol bindings for Python
@@ -459,7 +458,7 @@ class Resource(BaseMetadata):
     """
     icons: list[Icon] | None = None
     """An optional list of icons for this resource."""
-    groups: list[Group] | None = NONE
+    groups: list[Group] | None = None
     """An optional list of Groups this Resource is contained by"""
     annotations: Annotations | None = None
     meta: dict[str, Any] | None = Field(alias="_meta", default=None)
@@ -487,7 +486,7 @@ class ResourceTemplate(BaseMetadata):
     """
     icons: list[Icon] | None = None
     """An optional list of icons for this resource template."""
-    groups: list[Group] | None = NONE
+    groups: list[Group] | None = None
     """An optional list of Groups this ResourceTemplate is contained by"""
 
     annotations: Annotations | None = None
@@ -674,7 +673,7 @@ class Prompt(BaseMetadata):
     """A list of arguments to use for templating the prompt."""
     icons: list[Icon] | None = None
     """An optional list of icons for this prompt."""
-    groups: list[Group] | None = NONE
+    groups: list[Group] | None = None
     """An optional list of Groups this Prompt is contained by"""
     meta: dict[str, Any] | None = Field(alias="_meta", default=None)
     """
@@ -901,6 +900,8 @@ class Tool(BaseMetadata):
     """
     icons: list[Icon] | None = None
     """An optional list of icons for this tool."""
+    groups: list[Group] | None = None
+    """List of Groups this Tool is contained by"""
     annotations: ToolAnnotations | None = None
     """Optional additional tool information."""
     meta: dict[str, Any] | None = Field(alias="_meta", default=None)
@@ -908,10 +909,6 @@ class Tool(BaseMetadata):
     See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
     for notes on _meta usage.
     """
-    
-    groups: list[Group] | None = NONE
-    """List of Groups this Tool is contained by"""
-    
     model_config = ConfigDict(extra="allow")
 
 
