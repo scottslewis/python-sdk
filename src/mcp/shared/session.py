@@ -339,7 +339,7 @@ class BaseSession(
             jsonrpc_response = JSONRPCResponse(
                 jsonrpc="2.0",
                 id=request_id,
-                result=response.model_dump(by_alias=True, mode="json", exclude_none=True),
+                result=response.model_dump(by_alias=True, mode="json", exclude_none=True, context={"custom": True}),
             )
             session_message = SessionMessage(message=JSONRPCMessage(jsonrpc_response))
             await self._write_stream.send(session_message)

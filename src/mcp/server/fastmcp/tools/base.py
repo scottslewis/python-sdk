@@ -13,7 +13,7 @@ from mcp.server.fastmcp.utilities.context_injection import find_context_paramete
 from mcp.server.fastmcp.utilities.func_metadata import FuncMetadata, func_metadata
 from mcp.shared.exceptions import UrlElicitationRequiredError
 from mcp.shared.tool_name_validation import validate_and_warn_tool_name
-from mcp.types import Icon, ToolAnnotations
+from mcp.types import Icon, ToolAnnotations, Group
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp.server import Context
@@ -37,7 +37,7 @@ class Tool(BaseModel):
     annotations: ToolAnnotations | None = Field(None, description="Optional annotations for the tool")
     icons: list[Icon] | None = Field(default=None, description="Optional list of icons for this tool")
     meta: dict[str, Any] | None = Field(default=None, description="Optional metadata for this tool")
-
+    groups: list[Group] | None = Field(default=None, description="Optional list of Groups for this tool")
     @cached_property
     def output_schema(self) -> dict[str, Any] | None:
         return self.fn_metadata.output_schema
@@ -53,6 +53,7 @@ class Tool(BaseModel):
         annotations: ToolAnnotations | None = None,
         icons: list[Icon] | None = None,
         meta: dict[str, Any] | None = None,
+        groups: list[Group] | None = None,
         structured_output: bool | None = None,
     ) -> Tool:
         """Create a Tool from a function."""
@@ -88,6 +89,7 @@ class Tool(BaseModel):
             annotations=annotations,
             icons=icons,
             meta=meta,
+            groups=groups
         )
 
     async def run(

@@ -493,7 +493,9 @@ class ServerSession(
 
     async def send_tool_list_changed(self) -> None:  # pragma: no cover
         """Send a tool list changed notification."""
-        await self.send_notification(types.ServerNotification(types.ToolListChangedNotification()))
+        notification = types.ToolListChangedNotification()
+        notification.meta = { "hi": "there"}
+        await self.send_notification(types.ServerNotification(notification))
 
     async def send_prompt_list_changed(self) -> None:  # pragma: no cover
         """Send a prompt list changed notification."""

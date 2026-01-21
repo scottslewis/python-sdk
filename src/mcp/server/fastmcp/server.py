@@ -324,6 +324,7 @@ class FastMCP(Generic[LifespanResultT]):
                 outputSchema=info.output_schema,
                 annotations=info.annotations,
                 icons=info.icons,
+                groups=info.groups,
                 _meta=info.meta,
             )
             for info in tools

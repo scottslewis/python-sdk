@@ -2,13 +2,15 @@ from __future__ import annotations as _annotations
 
 from collections.abc import Callable
 from datetime import datetime
-from typing import Annotated, Any, Final, Generic, Literal, TypeAlias, TypeVar
+from typing import Annotated, Any, Final, Generic, Literal, TypeAlias, TypeVar, Self
 
-from pydantic import BaseModel, ConfigDict, Field, FileUrl, RootModel
+from pydantic import BaseModel, ConfigDict, Field, FileUrl, RootModel, model_serializer, field_serializer, field_validator, SerializerFunctionWrapHandler, ModelWrapValidatorHandler, ValidationError
 from pydantic.networks import AnyUrl, UrlConstraints
 from typing_extensions import deprecated
 
 LATEST_PROTOCOL_VERSION = "2025-11-25"
+
+from mcp import jptr
 
 """
 The default negotiated version of the Model Context Protocol when no version is specified.
@@ -228,7 +230,20 @@ class BaseMetadata(BaseModel):
     if present).
     """
 
-
+class Group(BaseMetadata):
+    """Definition for a Group of Tools, Resources, Prompts."""
+    description: str | None = None
+    """A description of the Group."""
+    parent: Self | None = None
+    
+    """parent Group for this group.  Default is None"""
+    meta: dict[str, Any] | None = Field(alias="_meta", default=None)
+    """
+    See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+    for notes on _meta usage.
+    """
+    model_config = ConfigDict(extra="allow")
+      
 class Icon(BaseModel):
     """An icon for display in user interfaces."""
 
@@ -976,6 +991,8 @@ class Prompt(BaseMetadata):
     """A list of arguments to use for templating the prompt."""
     icons: list[Icon] | None = None
     """An optional list of icons for this prompt."""
+    groups: list[Group] | None = None
+    """An optional list of Groups this Prompt is contained by"""
     meta: dict[str, Any] | None = Field(alias="_meta", default=None)
     """
     See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
@@ -1105,7 +1122,7 @@ class ToolResultContent(BaseModel):
     toolUseId: str
     """The unique identifier that corresponds to the tool call's id field."""
 
-    content: list[ContentBlock] = []
+#    content: list[ContentBlock] = []
     """
     A list of content objects representing the tool result.
     Defaults to empty list if not provided.
@@ -1322,13 +1339,33 @@ class Tool(BaseMetadata):
 
     model_config = ConfigDict(extra="allow")
 
+import json
 
 class ListToolsResult(PaginatedResult):
     """The server's response to a tools/list request from the client."""
 
     tools: list[Tool]
 
+    @field_serializer('tools',mode='wrap')
+    def ser_tools(
+        self, value: Any, handler: SerializerFunctionWrapHandler
+    ) -> int:
+        from_pojo_tools_dict = jptr.serialize_jptr(value)
+        eprint(json.dumps(from_pojo_tools_dict, indent=4))
+        return from_pojo_tools_dict
 
+    @field_validator('tools', mode='wrap')
+    @classmethod
+    def validate_tools(cls, value: list, handler) -> Any:
+        if value and isinstance(value[0], dict):
+            value = jptr.deserialize_jptr(value)
+            eprint(json.dumps(value, indent=4))
+        return handler(value)
+import sys
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+    
 class CallToolRequestParams(RequestParams):
     """Parameters for calling a tool."""
 

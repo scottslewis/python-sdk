@@ -61,6 +61,7 @@ from .types import (
     ToolsCapability,
     ToolUseContent,
     UnsubscribeRequest,
+    ContentBlock
 )
 from .types import Role as SamplingRole
 

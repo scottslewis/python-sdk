@@ -1,3 +1,7 @@
+import pydevd
+
+pydevd.settrace(stdout_to_server=True, stderr_to_server=True, suspend=False)
+
 from typing import Any
 
 import anyio
@@ -8,16 +12,7 @@ from mcp.shared._httpx_utils import create_mcp_http_client
 from starlette.requests import Request
 
 
-async def fetch_website(
-    url: str,
-) -> list[types.ContentBlock]:
-    headers = {"User-Agent": "MCP Test Server (github.com/modelcontextprotocol/python-sdk)"}
-    async with create_mcp_http_client(headers=headers) as client:
-        response = await client.get(url)
-        response.raise_for_status()
-        return [types.TextContent(type="text", text=response.text)]
-
-
+"""
 @click.command()
 @click.option("--port", default=8000, help="Port to listen on for SSE")
 @click.option(
@@ -26,16 +21,9 @@ async def fetch_website(
     default="stdio",
     help="Transport type",
 )
+"""
 def main(port: int, transport: str) -> int:
-    app = Server("mcp-website-fetcher")
-
-    @app.call_tool()
-    async def fetch_tool(name: str, arguments: dict[str, Any]) -> list[types.ContentBlock]:
-        if name != "fetch":
-            raise ValueError(f"Unknown tool: {name}")
-        if "url" not in arguments:
-            raise ValueError("Missing required argument 'url'")
-        return await fetch_website(arguments["url"])
+    app = Server("mcp-website-fetcher","1.0.0")
 
     @app.list_tools()
     async def list_tools() -> list[types.Tool]:
@@ -54,7 +42,25 @@ def main(port: int, transport: str) -> int:
                         }
                     },
                 },
+                groups=[types.Group(name='g1', title="g1 title", description="g1 description")]
+            ),
+                        types.Tool(
+                name="fetch1",
+                title="Website Fetcher 1",
+                description="Fetches a website and returns its content",
+                inputSchema={
+                    "type": "object",
+                    "required": ["url"],
+                    "properties": {
+                        "url": {
+                            "type": "string",
+                            "description": "URL to fetch",
+                        }
+                    },
+                },
+                groups=[types.Group(name='g1', title="g1 title", description="g1 description")]
             )
+
         ]
 
     if transport == "sse":
@@ -91,3 +97,6 @@ def main(port: int, transport: str) -> int:
         anyio.run(arun)
 
     return 0
+
+if __name__ == '__main__':
+    main(8000,'stdio')
