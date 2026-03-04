@@ -611,3 +611,30 @@ async def test_sse_client_handles_empty_keepalive_pings() -> None:
             assert not isinstance(msg, Exception)
             assert isinstance(msg.message, types.JSONRPCResponse)
             assert msg.message.id == 1
+
+
+@pytest.mark.anyio
+async def test_sse_session_cleanup_on_disconnect(server: None, server_url: str) -> None:
+    """Regression test for https://github.com/modelcontextprotocol/python-sdk/issues/1227
+
+    When a client disconnects, the server should remove the session from
+    _read_stream_writers. Without this cleanup, stale sessions accumulate and
+    POST requests to disconnected sessions return 202 Accepted followed by a
+    ClosedResourceError when the server tries to write to the dead stream.
+    """
+    captured: list[str] = []
+
+    # Connect a client session, then disconnect
+    async with sse_client(server_url + "/sse", on_session_created=captured.append) as streams:
+        async with ClientSession(*streams) as session:
+            await session.initialize()
+
+    # After disconnect, POST to the stale session should return 404
+    # (not 202 as it did before the fix)
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{server_url}/messages/?session_id={captured[0]}",
+            json={"jsonrpc": "2.0", "method": "ping", "id": 99},
+            headers={"Content-Type": "application/json"},
+        )
+        assert response.status_code == 404
